@@ -1,4 +1,4 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
@@ -15,7 +15,7 @@ $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 
 # Start transcript
-Start-Transcript -Path $TranscriptFile -Append
+Start-Transcript -Path $TranscriptFile
 
 
 $OS = (Get-CimInstance Win32_OperatingSystem).Caption
