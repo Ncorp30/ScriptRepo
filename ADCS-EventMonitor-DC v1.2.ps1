@@ -1,5 +1,19 @@
-﻿# Base log folder
-$BasePath = "C:\CA-Monitor\Logs"
+# Base log folder
+param(
+    [string]$BasePath = "C:\CA-Monitor\Logs",
+    [string]$SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
+)
+
+if ([string]::IsNullOrWhiteSpace($BasePath)) {
+    throw "BasePath cannot be empty."
+}
+if ([string]::IsNullOrWhiteSpace($SnapshotFile)) {
+    throw "SnapshotFile cannot be empty."
+}
+
+$BasePath = [System.IO.Path]::GetFullPath($BasePath)
+$SnapshotFile = [System.IO.Path]::GetFullPath($SnapshotFile)
+
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
@@ -80,8 +94,6 @@ elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
 # ================================
 $EndTime   = Get-Date
 $StartTime = $EndTime.AddMinutes(-30)
-
-$SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
 
 # Ensure folder exists
 $Folder = Split-Path $SnapshotFile
