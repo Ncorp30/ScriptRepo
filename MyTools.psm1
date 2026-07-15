@@ -9,11 +9,13 @@ function Get-SystemInfo {
     [CmdletBinding()]
     param()
 
+    $os = Get-CimInstance Win32_OperatingSystem
+
     [PSCustomObject]@{
         ComputerName = $env:COMPUTERNAME
         UserName     = $env:USERNAME
-        OS           = (Get-CimInstance Win32_OperatingSystem).Caption
-        LastBootTime = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+        OS           = $os.Caption
+        LastBootTime = $os.LastBootUpTime
     }
 }
 

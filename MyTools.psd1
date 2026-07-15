@@ -3,7 +3,7 @@
 # Module metadata
 RootModule = 'MyTools.psm1'
 
-ModuleVersion = '1.0.0'
+ModuleVersion = '1.0.1'
 
 GUID = '8d6f9f3c-1f6b-4d90-ae72-123456789abc'
 
