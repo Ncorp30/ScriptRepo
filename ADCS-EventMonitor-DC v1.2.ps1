@@ -1,12 +1,60 @@
-﻿# Base log folder
-$BasePath = "C:\CA-Monitor\Logs"
+# Base log folder
+param(
+    [string]$BasePath = (Join-Path $env:ProgramData "CA-Monitor\Logs")
+)
+
+if ([string]::IsNullOrWhiteSpace($BasePath)) {
+    throw "BasePath cannot be empty."
+}
+
+$BasePath = [System.IO.Path]::GetFullPath($BasePath)
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
-# Ensure folder exists (only once, no timestamp folder)
-if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
+
+function Set-RestrictedAcl {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    try {
+        $acl = Get-Acl -Path $Path
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($rule in @($acl.Access)) {
+            [void]$acl.RemoveAccessRule($rule)
+        }
+
+        $inheritanceFlags = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        $propagationFlags = [System.Security.AccessControl.PropagationFlags]::None
+        $accessType = [System.Security.AccessControl.AccessControlType]::Allow
+
+        $rules = @(
+            New-Object System.Security.AccessControl.FileSystemAccessRule("SYSTEM", "FullControl", $inheritanceFlags, $propagationFlags, $accessType),
+            New-Object System.Security.AccessControl.FileSystemAccessRule("Administrators", "FullControl", $inheritanceFlags, $propagationFlags, $accessType)
+        )
+
+        foreach ($rule in $rules) {
+            $acl.AddAccessRule($rule)
+        }
+
+        Set-Acl -Path $Path -AclObject $acl
+    }
+    catch {
+    }
 }
+
+# Ensure folder exists (only once, no timestamp folder)
+try {
+    if (!(Test-Path $BasePath)) {
+        New-Item -Path $BasePath -ItemType Directory -ErrorAction Stop | Out-Null
+    }
+}
+catch {
+    throw "Failed to create base log folder '$BasePath'. Check path validity, permissions, and whether the path is locked or in use. Details: $($_.Exception.Message)"
+}
+
+Set-RestrictedAcl -Path $BasePath
 
 # Timestamp for file
 $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
@@ -18,7 +66,7 @@ $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 Start-Transcript -Path $TranscriptFile -Append
 
 
-$OS = (Get-CimInstance Win32_OperatingSystem).Caption
+$OS = $null
 
 function Test-ADModule {
     return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
@@ -27,6 +75,10 @@ function Test-ADModule {
 # --------------------------
 # SERVER OS
 # --------------------------
+if ($PSVersionTable.PSEdition -eq "Desktop" -and $env:OS -eq "Windows_NT") {
+    $OS = [System.Environment]::OSVersion.VersionString
+}
+
 if ($OS -match "Windows Server") {
 
     if (Test-ADModule) {
@@ -81,7 +133,7 @@ elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
 $EndTime   = Get-Date
 $StartTime = $EndTime.AddMinutes(-30)
 
-$SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
+$SnapshotFile = Join-Path $BasePath "PublishedTemplates.json"
 
 # Ensure folder exists
 $Folder = Split-Path $SnapshotFile
