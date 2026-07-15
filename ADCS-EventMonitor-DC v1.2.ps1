@@ -1,4 +1,4 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
@@ -18,8 +18,6 @@ $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 Start-Transcript -Path $TranscriptFile -Append
 
 
-$OS = (Get-CimInstance Win32_OperatingSystem).Caption
-
 function Test-ADModule {
     return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
 }
@@ -27,7 +25,7 @@ function Test-ADModule {
 # --------------------------
 # SERVER OS
 # --------------------------
-if ($OS -match "Windows Server") {
+if ($PSVersionTable.PSEdition -eq "Desktop" -and $env:OS -eq "Windows_NT" -and [System.Environment]::OSVersion.Version.Major -ge 10 -and [System.Environment]::OSVersion.VersionString -match "Windows Server") {
 
     if (Test-ADModule) {
         Write-Host "ActiveDirectory module is already installed." -ForegroundColor Green
@@ -42,7 +40,7 @@ if ($OS -match "Windows Server") {
 # --------------------------
 # WINDOWS 10 / 11 OS
 # --------------------------
-elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
+elseif ($PSVersionTable.PSEdition -eq "Desktop" -and $env:OS -eq "Windows_NT" -and [System.Environment]::OSVersion.Version.Major -ge 10 -and [System.Environment]::OSVersion.VersionString -notmatch "Windows Server") {
 
     $requiredRsat = @(
         "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0",   # For Get-AD*
