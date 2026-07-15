@@ -1,5 +1,9 @@
-﻿# Base log folder
-$BasePath = "C:\CA-Monitor\Logs"
+# Base log folder
+param(
+    [string]$BasePath = "C:\CA-Monitor\Logs",
+    [string]$SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
+)
+
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
@@ -15,13 +19,27 @@ $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 
 # Start transcript
-Start-Transcript -Path $TranscriptFile -Append
+$TranscriptStarted = $false
+try {
+    Start-Transcript -Path $TranscriptFile -Append -ErrorAction Stop
+    $TranscriptStarted = $true
+}
+catch {
+    Write-Warning "Failed to start transcript: $($_.Exception.Message)"
+    exit
+}
 
 
 $OS = (Get-CimInstance Win32_OperatingSystem).Caption
 
 function Test-ADModule {
-    return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
+    try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
 }
 
 # --------------------------
@@ -80,8 +98,6 @@ elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
 # ================================
 $EndTime   = Get-Date
 $StartTime = $EndTime.AddMinutes(-30)
-
-$SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
 
 # Ensure folder exists
 $Folder = Split-Path $SnapshotFile
@@ -580,4 +596,6 @@ else
 # ================================
 $CurrentTemplates | Sort-Object -Unique | ConvertTo-Json -Depth 3 | Set-Content $SnapshotFile
 
-Stop-Transcript
+if ($TranscriptStarted) {
+    Stop-Transcript
+}
