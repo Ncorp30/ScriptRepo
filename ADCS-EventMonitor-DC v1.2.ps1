@@ -1,11 +1,16 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
 # Ensure folder exists (only once, no timestamp folder)
 if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
+    try {
+        New-Item -Path $BasePath -ItemType Directory -Force -ErrorAction Stop | Out-Null
+    }
+    catch {
+        throw "Failed to create base log folder '$BasePath'. Check permissions, path validity, or whether the path is locked. $($_.Exception.Message)"
+    }
 }
 
 # Timestamp for file
@@ -86,7 +91,12 @@ $SnapshotFile = "C:\CA-Monitor\PublishedTemplates.json"
 # Ensure folder exists
 $Folder = Split-Path $SnapshotFile
 if (!(Test-Path $Folder)) {
-    New-Item -ItemType Directory -Path $Folder | Out-Null
+    try {
+        New-Item -ItemType Directory -Path $Folder -Force -ErrorAction Stop | Out-Null
+    }
+    catch {
+        throw "Failed to create snapshot folder '$Folder'. Check permissions, path validity, or whether the path is locked. $($_.Exception.Message)"
+    }
 }
 
 # ================================
