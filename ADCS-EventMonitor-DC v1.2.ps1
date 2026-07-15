@@ -1,4 +1,4 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
@@ -24,18 +24,44 @@ function Test-ADModule {
     return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
 }
 
+function Ensure-ADModule {
+    if (-not (Test-ADModule)) {
+        return $false
+    }
+
+    try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        return $true
+    }
+    catch {
+        Write-Host "ActiveDirectory module was found but failed to import." -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        return $false
+    }
+}
+
 # --------------------------
 # SERVER OS
 # --------------------------
 if ($OS -match "Windows Server") {
 
     if (Test-ADModule) {
-        Write-Host "ActiveDirectory module is already installed." -ForegroundColor Green
+        if (Ensure-ADModule) {
+            Write-Host "ActiveDirectory module is already installed." -ForegroundColor Green
+        }
+        else {
+            exit
+        }
     }
     else {
         Write-Host "ActiveDirectory module NOT found — Installing..." -ForegroundColor Yellow
         Install-WindowsFeature RSAT-AD-PowerShell
-        Write-Host "Installation complete on Server." -ForegroundColor Green
+        if (Ensure-ADModule) {
+            Write-Host "Installation complete on Server." -ForegroundColor Green
+        }
+        else {
+            exit
+        }
     }
 }
 
@@ -72,7 +98,9 @@ elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
         }
     }
 
-    Import-Module ActiveDirectory -ErrorAction Stop
+    if (-not (Ensure-ADModule)) {
+        exit
+    }
 }
 
 # ================================
