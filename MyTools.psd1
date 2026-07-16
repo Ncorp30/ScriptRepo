@@ -42,4 +42,14 @@ CompatiblePSEditions = @(
     'Core'
 )
 
+# Manifest integrity and distribution controls
+PrivateData = @{
+    PSData = @{
+        Tags = @('Utility', 'System', 'File')
+        LicenseUri = 'https://example.com/license'
+        ProjectUri = 'https://example.com/project'
+        ReleaseNotes = 'Initial release.'
+    }
+}
+
 }
