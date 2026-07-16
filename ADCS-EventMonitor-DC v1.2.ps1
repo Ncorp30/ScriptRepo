@@ -1,11 +1,16 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
 # Ensure folder exists (only once, no timestamp folder)
 if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
+    try {
+        New-Item -Path $BasePath -ItemType Directory -ErrorAction Stop | Out-Null
+    }
+    catch {
+        throw "Failed to create base log folder '$BasePath'. Directory creation may be unavailable, access may be denied, or the filesystem may be read-only. $($_.Exception.Message)"
+    }
 }
 
 # Timestamp for file
