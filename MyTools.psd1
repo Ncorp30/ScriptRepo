@@ -5,7 +5,7 @@ RootModule = 'MyTools.psm1'
 
 ModuleVersion = '1.0.0'
 
-GUID = '8d6f9f3c-1f6b-4d90-ae72-123456789abc'
+GUID = '4b5d2a1f-7c3e-4a91-9f2d-6e8c1a0f5d27'
 
 Author = 'NathCorp'
 
