@@ -42,4 +42,17 @@ CompatiblePSEditions = @(
     'Core'
 )
 
+RequiredModules = @()
+
+ModuleList = @()
+
+PrivateData = @{
+    PSData = @{
+        Tags = @('utility', 'system', 'file', 'logging')
+        ProjectUri = 'https://example.com/MyTools'
+        LicenseUri = 'https://example.com/MyTools/license'
+        ReleaseNotes = 'Initial module manifest metadata.'
+    }
+}
+
 }
