@@ -1,28 +1,47 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
-# Ensure folder exists (only once, no timestamp folder)
-if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
+$SystemInfo = $null
+
+function Initialize-Transcript {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BasePath
+    )
+
+    if (!(Test-Path $BasePath)) {
+        New-Item -Path $BasePath -ItemType Directory | Out-Null
+    }
+
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+
+    $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
+
+    try {
+        Start-Transcript -Path $TranscriptFile -Append -ErrorAction Stop
+        return $true
+    }
+    catch {
+        Write-Host "Failed to start transcript: $($_.Exception.Message)" -ForegroundColor Yellow
+        return $false
+    }
 }
-
-# Timestamp for file
-$TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-
-# Transcript file with timestamp
-$TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
-
-# Start transcript
-Start-Transcript -Path $TranscriptFile -Append
-
-
-$OS = (Get-CimInstance Win32_OperatingSystem).Caption
 
 function Test-ADModule {
-    return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
+    if (-not (Get-Variable -Name ADModuleAvailable -Scope Script -ErrorAction SilentlyContinue)) {
+        $script:ADModuleAvailable = [bool](Get-Module -ListAvailable -Name ActiveDirectory)
+    }
+
+    return $script:ADModuleAvailable
 }
+
+$TranscriptStarted = Initialize-Transcript -BasePath $BasePath
+
+
+$SystemInfo = Get-CimInstance Win32_OperatingSystem
+$OS = $SystemInfo.Caption
 
 # --------------------------
 # SERVER OS
@@ -64,6 +83,7 @@ elseif ($OS -match "Windows 10" -or $OS -match "Windows 11") {
                 Write-Host "Failed to install $rsatName" -ForegroundColor Red
                 Write-Host $_.Exception.Message -ForegroundColor Red
                 $ProgressPreference = $oldProg
+                if ($TranscriptStarted) { Stop-Transcript }
                 exit
             }
         }
@@ -580,4 +600,4 @@ else
 # ================================
 $CurrentTemplates | Sort-Object -Unique | ConvertTo-Json -Depth 3 | Set-Content $SnapshotFile
 
-Stop-Transcript
+if ($TranscriptStarted) { Stop-Transcript }
