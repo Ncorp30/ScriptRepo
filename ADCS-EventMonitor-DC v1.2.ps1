@@ -1,5 +1,8 @@
-﻿# Base log folder
-$BasePath = "C:\CA-Monitor\Logs"
+# Base log folder
+$BasePath = $env:CA_MONITOR_LOG_DIR
+if ([string]::IsNullOrWhiteSpace($BasePath)) {
+    $BasePath = Join-Path $env:ProgramData "CA-Monitor\Logs"
+}
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
