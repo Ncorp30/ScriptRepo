@@ -1,11 +1,16 @@
-﻿# Base log folder
+# Base log folder
 $BasePath = "C:\CA-Monitor\Logs"
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
 # Ensure folder exists (only once, no timestamp folder)
 if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
+    try {
+        New-Item -Path $BasePath -ItemType Directory -ErrorAction Stop | Out-Null
+    }
+    catch {
+        throw "Failed to create base log folder '$BasePath'. $($_.Exception.Message)"
+    }
 }
 
 # Timestamp for file
@@ -17,11 +22,19 @@ $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 # Start transcript
 Start-Transcript -Path $TranscriptFile -Append
 
+try {
 
-$OS = (Get-CimInstance Win32_OperatingSystem).Caption
+$OSInfo = Get-CimInstance Win32_OperatingSystem
+$OS = $OSInfo.Caption
 
 function Test-ADModule {
-    return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
+    try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
 }
 
 # --------------------------
@@ -580,4 +593,7 @@ else
 # ================================
 $CurrentTemplates | Sort-Object -Unique | ConvertTo-Json -Depth 3 | Set-Content $SnapshotFile
 
-Stop-Transcript
+}
+finally {
+    Stop-Transcript
+}
