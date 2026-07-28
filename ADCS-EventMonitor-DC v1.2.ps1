@@ -1,5 +1,8 @@
 ﻿# Base log folder
-$BasePath = "C:\CA-Monitor\Logs"
+param(
+    [string]$BasePath = (Join-Path $env:ProgramData "CA-Monitor\Logs")
+)
+
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
@@ -15,13 +18,25 @@ $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $TranscriptFile = Join-Path $BasePath "Transcript_$TimeStamp.txt"
 
 # Start transcript
-Start-Transcript -Path $TranscriptFile -Append
+try {
+    Start-Transcript -Path $TranscriptFile -Append
+}
+catch {
+    throw
+}
 
 
-$OS = (Get-CimInstance Win32_OperatingSystem).Caption
+$OS = Get-CimInstance Win32_OperatingSystem
+$OS = $OS.Caption
 
 function Test-ADModule {
-    return (Get-Module -ListAvailable -Name ActiveDirectory) -ne $null
+    try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
 }
 
 # --------------------------
