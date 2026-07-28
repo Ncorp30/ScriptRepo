@@ -9,11 +9,13 @@ function Get-SystemInfo {
     [CmdletBinding()]
     param()
 
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+
     [PSCustomObject]@{
         ComputerName = $env:COMPUTERNAME
         UserName     = $env:USERNAME
-        OS           = (Get-CimInstance Win32_OperatingSystem).Caption
-        LastBootTime = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+        OS           = $os.Caption
+        LastBootTime = $os.LastBootUpTime
     }
 }
 
@@ -30,14 +32,20 @@ function Test-FileExists {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]$Path
     )
 
-    if (Test-Path -Path $Path) {
-        return $true
-    }
+    try {
+        if (Test-Path -Path $Path -ErrorAction Stop) {
+            return $true
+        }
 
-    return $false
+        return $false
+    }
+    catch {
+        throw
+    }
 }
 
 
@@ -50,6 +58,7 @@ function Write-LogMessage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]$Message,
 
         [ValidateSet("INFO","WARNING","ERROR")]
