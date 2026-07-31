@@ -1,15 +1,40 @@
 ﻿# Base log folder
 param(
+    [ValidateScript({
+        $resolvedBasePath = if ([string]::IsNullOrWhiteSpace($_)) {
+            Join-Path $env:ProgramData "CA-Monitor\Logs"
+        }
+        else {
+            $_
+        }
+
+        if ([string]::IsNullOrWhiteSpace($resolvedBasePath)) {
+            throw "BasePath could not be resolved because ProgramData is unset or empty."
+        }
+
+        $true
+    })]
     [string]$BasePath = (Join-Path $env:ProgramData "CA-Monitor\Logs")
 )
+
+$resolvedBasePath = if ([string]::IsNullOrWhiteSpace($BasePath)) {
+    Join-Path $env:ProgramData "CA-Monitor\Logs"
+}
+else {
+    $BasePath
+}
+
+if ([string]::IsNullOrWhiteSpace($resolvedBasePath)) {
+    throw "BasePath could not be resolved because ProgramData is unset or empty."
+}
+
+$BasePath = $resolvedBasePath
 
 $StalePublishedTemplates = @()
 $TemplateLookup = @{}
 $TemplateInventory = @()
 # Ensure folder exists (only once, no timestamp folder)
-if (!(Test-Path $BasePath)) {
-    New-Item -Path $BasePath -ItemType Directory | Out-Null
-}
+New-Item -Path $BasePath -ItemType Directory -Force | Out-Null
 
 # Timestamp for file
 $TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
@@ -22,7 +47,7 @@ try {
     Start-Transcript -Path $TranscriptFile -Append
 }
 catch {
-    throw
+    throw "Failed to start transcript at '$TranscriptFile': $($_.Exception.Message)"
 }
 
 
